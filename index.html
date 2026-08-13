@@ -1,1 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Japan Trip Stage 0 Diagnostic v0.0</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark;--bg:#f5f5f3;--card:#fff;--text:#171717;--muted:#666;--line:#d9d9d4;--ok:#176b36;--warn:#8a5a00;--bad:#9d1c1c;--accent:#225ea8}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--card:#1b1b1b;--text:#eee;--muted:#aaa;--line:#3b3b3b;--ok:#69d28a;--warn:#f0c36a;--bad:#ff8e8e;--accent:#78aee8}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:15px;line-height:1.35}main{max-width:760px;margin:auto;padding:16px 14px 32px}h1{font-size:21px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px}.sub{color:var(--muted);font-size:13px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}.grid{display:grid;grid-template-columns:minmax(140px,1fr) 2fr;gap:7px 10px}.label{color:var(--muted)}.status{font-weight:650}.pass{color:var(--ok)}.warn{color:var(--warn)}.fail{color:var(--bad)}button{font:inherit;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:var(--card);color:var(--text);margin:4px 5px 4px 0;font-weight:600}button:active{transform:translateY(1px)}button.primary{border-color:var(--accent);color:var(--accent)}#map{width:100%;height:320px;display:block;border:1px solid var(--line);border-radius:10px;background:#dfe8dd;touch-action:none}#map text{user-select:none}.mapbar{display:flex;align-items:center;gap:5px;margin:8px 0 0}.mapbar .spacer{flex:1}.small{font-size:12px;color:var(--muted)}pre{white-space:pre-wrap;word-break:break-word;margin:0;max-height:220px;overflow:auto;font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 7px;margin-left:6px;font-size:11px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.row{margin:3px 0}.topline{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+</style>
+</head>
+<body>
+<main>
+  <div class="topline"><h1>Japan Trip Stage 0 Diagnostic</h1><span class="pill">v0.0</span></div>
+  <div class="sub">Single-file offline diagnostic. No external scripts, styles, fonts, map files, APIs or network calls.</div>
+
+  <section class="card">
+    <h2>Core runtime</h2>
+    <div class="grid">
+      <div class="label">JavaScript</div><div id="js" class="status warn">NOT RUN: JavaScript has not executed</div>
+      <div class="label">URL protocol</div><div id="protocol" class="mono"></div>
+      <div class="label">Secure context</div><div id="secure" class="status"></div>
+      <div class="label">Geolocation API</div><div id="geoapi" class="status"></div>
+      <div class="label">Geo context verdict</div><div id="geoContext" class="status">Not tested</div>
+      <div class="label">Permission state</div><div id="permission" class="status">Not queried</div>
+      <div class="label">Network isolation</div><div id="network" class="status"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Location tests</h2>
+    <button id="once" class="primary">Run getCurrentPosition()</button>
+    <button id="start">Start watchPosition()</button>
+    <button id="stop">Stop watch</button>
+    <div class="grid" style="margin-top:8px">
+      <div class="label">One-shot result</div><div id="onceStatus" class="status">Not run</div>
+      <div class="label">Watch result</div><div id="watchStatus" class="status">Not run</div>
+      <div class="label">Latitude / longitude</div><div id="coords" class="mono">-</div>
+      <div class="label">Accuracy</div><div id="accuracy">-</div>
+      <div class="label">Watch updates</div><div id="updates">0</div>
+      <div class="label">Moved from first fix</div><div id="distance">-</div>
+      <div class="label">Last fix</div><div id="fixTime">-</div>
+    </div>
+    <div class="small" style="margin-top:8px">For the movement test, leave the watch running and walk far enough to exceed normal GPS noise. The page records update count and displacement from the first watch fix.</div>
+  </section>
+
+  <section class="card">
+    <h2>Embedded binary payload</h2>
+    <button id="payloadBtn" class="primary">Decode payload</button>
+    <div class="grid" style="margin-top:8px">
+      <div class="label">Binary decode</div><div id="payloadStatus" class="status">Not run</div>
+      <div class="label">Decoded records</div><div id="payloadCount">-</div>
+      <div class="label">Checksum</div><div id="checksum" class="mono">-</div>
+      <div class="label">Browser gzip API</div><div id="gzip" class="status">-</div>
+    </div>
+    <div class="small" style="margin-top:8px">The test payload is Base64-wrapped binary using delta coordinates plus ZigZag variable-length integer encoding. This is representative of compact embedded vector data and is decoded entirely in-page.</div>
+  </section>
+
+  <section class="card">
+    <h2>Offline interactive map</h2>
+    <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Embedded offline diagnostic map">
+      <rect x="0" y="0" width="1000" height="700" fill="#dfe8dd"/>
+      <path d="M0 575 C170 525 300 590 465 555 C640 518 790 530 1000 470 L1000 700 L0 700Z" fill="#b8d6e7"/>
+      <path d="M120 0 L165 700 M330 0 L355 700 M580 0 L560 700 M820 0 L770 700" stroke="#f7f4e8" stroke-width="34" fill="none"/>
+      <path d="M0 125 L1000 155 M0 310 L1000 335 M0 475 L1000 430" stroke="#f7f4e8" stroke-width="28" fill="none"/>
+      <path d="M120 0 L165 700 M330 0 L355 700 M580 0 L560 700 M820 0 L770 700 M0 125 L1000 155 M0 310 L1000 335 M0 475 L1000 430" stroke="#c5bfb0" stroke-width="2" fill="none"/>
+      <g id="poiLayer">
+        <circle cx="510" cy="470" r="10" fill="#333"/><text x="528" y="475" font-size="24" fill="#222">Kyoto Station</text>
+        <circle cx="445" cy="260" r="10" fill="#333"/><text x="463" y="265" font-size="24" fill="#222">Nijo</text>
+        <circle cx="665" cy="325" r="10" fill="#333"/><text x="683" y="330" font-size="24" fill="#222">Gion</text>
+      </g>
+      <g id="deviceMarker" visibility="hidden"><circle cx="0" cy="0" r="20" fill="#225ea8" opacity=".22"/><circle cx="0" cy="0" r="7" fill="#225ea8" stroke="#fff" stroke-width="3"/></g>
+    </svg>
+    <div class="mapbar"><button id="zoomIn">+</button><button id="zoomOut">-</button><button id="resetMap">Reset</button><span class="spacer"></span><span id="mapStatus" class="small">Drag to pan. Use +/- or mouse-wheel to zoom.</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Event log</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const logEl=$('log');
+function log(msg){const t=new Date().toLocaleTimeString();logEl.textContent=`${t}  ${msg}\n`+logEl.textContent.slice(0,7000)}
+function status(el,text,kind){el.textContent=text;el.className='status '+(kind||'')}
+
+status($('js'),'PASS: executing','pass');
+$('protocol').textContent=location.protocol+'  '+location.href;
+status($('secure'),window.isSecureContext?'YES':'NO',window.isSecureContext?'pass':'warn');
+status($('geoapi'),'geolocation' in navigator?'AVAILABLE':'UNAVAILABLE','geolocation' in navigator?'pass':'fail');
+const externalAttrs=[...document.querySelectorAll('[src],[href]')].map(e=>e.src||e.href).filter(u=>/^https?:/i.test(u));
+const perfExternal=performance.getEntriesByType('resource').filter(e=>/^https?:/i.test(e.name));
+status($('network'),externalAttrs.length===0&&perfExternal.length===0?'PASS: 0 external resources':'CHECK: external resource detected',externalAttrs.length===0&&perfExternal.length===0?'pass':'fail');
+$('gzip').textContent=('DecompressionStream' in window)?'AVAILABLE':'NOT AVAILABLE';
+$('gzip').className='status '+(('DecompressionStream' in window)?'pass':'warn');
+log(`Page loaded via ${location.protocol}; secureContext=${window.isSecureContext}; externalResources=${externalAttrs.length+perfExternal.length}`);
+
+if(navigator.permissions&&navigator.permissions.query){
+  navigator.permissions.query({name:'geolocation'}).then(p=>{status($('permission'),p.state,p.state==='granted'?'pass':p.state==='denied'?'fail':'warn');p.onchange=()=>status($('permission'),p.state,p.state==='granted'?'pass':p.state==='denied'?'fail':'warn')}).catch(e=>{status($('permission'),'Permissions API not usable','warn');log('Permissions query: '+e.message)})
+}else status($('permission'),'Permissions API unavailable','warn');
+
+function showPosition(p,source){
+  status($('geoContext'),'PASS: geolocation request accepted','pass');
+  const c=p.coords;
+  $('coords').textContent=`${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)}`;
+  $('accuracy').textContent=`${Math.round(c.accuracy)} m`;
+  $('fixTime').textContent=new Date(p.timestamp).toLocaleString();
+  log(`${source}: ${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)} ±${Math.round(c.accuracy)}m`);
+  updateDeviceMarker(c.latitude,c.longitude);
+}
+function geoError(err,source,target){
+  const names={1:'PERMISSION_DENIED',2:'POSITION_UNAVAILABLE',3:'TIMEOUT'};
+  if(err.code===1)status($('geoContext'),'BLOCKED or denied: inspect error message','fail');
+  else status($('geoContext'),'PASS: request accepted; no fix returned','pass');
+  status(target,`FAIL: ${names[err.code]||err.code} - ${err.message}`,'fail');
+  log(`${source} error ${err.code}: ${err.message}`)
+}
+const geoOpts={enableHighAccuracy:true,maximumAge:0,timeout:20000};
+$('once').onclick=()=>{
+  if(!navigator.geolocation){status($('onceStatus'),'FAIL: API unavailable','fail');return}
+  status($('onceStatus'),'Requesting...','warn');status($('geoContext'),'Testing...','warn');
+  navigator.geolocation.getCurrentPosition(p=>{showPosition(p,'getCurrentPosition');status($('onceStatus'),'PASS: position returned','pass')},e=>geoError(e,'getCurrentPosition',$('onceStatus')),geoOpts)
+};
+let watchId=null,watchCount=0,firstFix=null;
+function hav(a,b){const R=6371000,rad=Math.PI/180,dLat=(b.latitude-a.latitude)*rad,dLon=(b.longitude-a.longitude)*rad,la1=a.latitude*rad,la2=b.latitude*rad;const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+$('start').onclick=()=>{
+  if(!navigator.geolocation){status($('watchStatus'),'FAIL: API unavailable','fail');return}
+  if(watchId!==null)navigator.geolocation.clearWatch(watchId);
+  watchCount=0;firstFix=null;$('updates').textContent='0';$('distance').textContent='-';status($('watchStatus'),'Watching...','warn');status($('geoContext'),'Testing...','warn');
+  watchId=navigator.geolocation.watchPosition(p=>{watchCount++;showPosition(p,'watchPosition');$('updates').textContent=String(watchCount);if(!firstFix)firstFix={latitude:p.coords.latitude,longitude:p.coords.longitude};const d=hav(firstFix,p.coords);$('distance').textContent=d.toFixed(1)+' m';status($('watchStatus'),`PASS: active (${watchCount} update${watchCount===1?'':'s'})`,'pass')},e=>geoError(e,'watchPosition',$('watchStatus')),geoOpts);
+  log('watchPosition started')
+};
+$('stop').onclick=()=>{if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;status($('watchStatus'),`STOPPED after ${watchCount} update${watchCount===1?'':'s'}`,watchCount?'pass':'warn');log('watchPosition stopped')}else log('Stop requested; no active watch')};
+
+// Representative compact binary vector payload: J0V1 + count + [kind, zigzag-varint dLatE6, zigzag-varint dLonE6].
+const PAYLOAD='SjBWMRQAAAAB8t2uId6OvIEBAcy7A5GmAQHHpAHY3QMC8nvppgECrLEDg94EApXNAfCzCAK1mweljQMDzL4E2CUDjs0B4nID2R/16AID97oC0IsDBLqWAbP5AQSSTbodBMG4AtGmAQT0hQXxKAW1qAOevgEF4oEBzZcCBbNNrrUBBdSZAZJ9Bbu3BMvXAQ==';
+const EXPECTED_RECORDS=20;
+const EXPECTED_FNV='429d5c6a';
+function b64bytes(s){const bin=atob(s),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a}
+function fnv1a(a){let h=0x811c9dc5;for(const b of a){h^=b;h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')}
+function readVar(a,o){let v=0,s=0,b;do{if(o.i>=a.length)throw new Error('Unexpected end of varint');b=a[o.i++];v|=(b&127)<<s;s+=7;if(s>35)throw new Error('Varint too long')}while(b&128);return v>>>0}
+function unzig(v){return (v>>>1)^-(v&1)}
+function decodePayload(){
+  const a=b64bytes(PAYLOAD),sum=fnv1a(a),o={i:0};
+  const magic=String.fromCharCode(...a.slice(0,4));o.i=4;if(magic!=='J0V1')throw new Error('Bad payload header: '+magic);
+  const dv=new DataView(a.buffer,a.byteOffset,a.byteLength);const n=dv.getUint32(o.i,true);o.i+=4;let lat=0,lon=0;const rows=[];
+  for(let i=0;i<n;i++){const kind=a[o.i++];lat+=unzig(readVar(a,o));lon+=unzig(readVar(a,o));rows.push({kind,lat:lat/1e6,lon:lon/1e6})}
+  return {bytes:a.length,checksum:sum,rows};
+}
+$('payloadBtn').onclick=()=>{try{const r=decodePayload();$('payloadCount').textContent=`${r.rows.length} records / ${r.bytes} bytes`;$('checksum').textContent=r.checksum;const ok=r.rows.length===EXPECTED_RECORDS&&r.checksum===EXPECTED_FNV;status($('payloadStatus'),ok?'PASS: decoded and verified':'FAIL: verification mismatch',ok?'pass':'fail');log(`Payload decoded: ${r.rows.length} records, ${r.bytes} bytes, fnv=${r.checksum}`)}catch(e){status($('payloadStatus'),'FAIL: '+e.message,'fail');log('Payload error: '+e.message)}};
+
+// Inline SVG map pan/zoom. It makes no network requests.
+const map=$('map');const vb={x:0,y:0,w:1000,h:700};const home={...vb};let drag=null,pinch=null;
+function applyVB(){map.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`)}
+function mapPass(){ $('mapStatus').textContent='PASS: interactive map event handled locally.' }
+function zoom(f,cx=vb.x+vb.w/2,cy=vb.y+vb.h/2){const nw=Math.max(180,Math.min(1800,vb.w*f)),nh=nw*0.7;vb.x=cx-(cx-vb.x)*(nw/vb.w);vb.y=cy-(cy-vb.y)*(nh/vb.h);vb.w=nw;vb.h=nh;applyVB()}
+$('zoomIn').onclick=()=>{zoom(.8);mapPass()};$('zoomOut').onclick=()=>{zoom(1.25);mapPass()};$('resetMap').onclick=()=>{Object.assign(vb,home);applyVB();mapPass()};
+function svgPoint(clientX,clientY){const r=map.getBoundingClientRect();return{x:vb.x+(clientX-r.left)/r.width*vb.w,y:vb.y+(clientY-r.top)/r.height*vb.h}}
+map.addEventListener('wheel',e=>{e.preventDefault();const p=svgPoint(e.clientX,e.clientY);zoom(e.deltaY<0?.85:1.18,p.x,p.y);mapPass()},{passive:false});
+map.addEventListener('pointerdown',e=>{map.setPointerCapture(e.pointerId);const p=svgPoint(e.clientX,e.clientY);drag={id:e.pointerId,p,ox:vb.x,oy:vb.y}});
+map.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const p=svgPoint(e.clientX,e.clientY);vb.x=drag.ox-(p.x-drag.p.x);vb.y=drag.oy-(p.y-drag.p.y);applyVB();mapPass()});
+map.addEventListener('pointerup',e=>{if(drag&&drag.id===e.pointerId)drag=null});
+map.addEventListener('pointercancel',()=>drag=null);
+function updateDeviceMarker(lat,lon){const minLat=34.94,maxLat=35.10,minLon=135.66,maxLon=135.88;if(lat<minLat||lat>maxLat||lon<minLon||lon>maxLon){$('deviceMarker').setAttribute('visibility','hidden');$('mapStatus').textContent='Location fix received; device is outside the embedded Kyoto diagnostic extent.';return}const x=(lon-minLon)/(maxLon-minLon)*1000,y=(maxLat-lat)/(maxLat-minLat)*700;const g=$('deviceMarker');g.setAttribute('transform',`translate(${x} ${y})`);g.setAttribute('visibility','visible');$('mapStatus').textContent='Blue marker = current device location within diagnostic extent.'}
+
+try{const r=decodePayload();log(`Startup binary self-check: ${r.rows.length} records available`)}catch(e){log('Startup binary self-check failed: '+e.message)}
+$('payloadBtn').click();
+</script>
+</body>
+</html>
 
